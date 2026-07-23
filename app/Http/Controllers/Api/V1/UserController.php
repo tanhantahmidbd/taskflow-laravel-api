@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\BaseController as BaseController;
 use App\Models\User;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends BaseController
 {
@@ -39,15 +39,31 @@ class UserController extends BaseController
   }
   //----------
   
-  public function login()
+  public function login(Request $request)
   {
-    
+    $checkValidator = Validator::make($request->all(),[
+      'email' => 'required|email',
+      'password'=> 'required|min:4|max:8'                                
+    ]);
+
+    if($checkValidator->fails()){
+      return $this->error($checkValidator->errors());
+    }
+
+    if(!Auth::attempt($checkValidator->validated())){
+      return $this->error([],"Invaild email or password");
+    }
+
+    $user = Auth::user();
+    $user['token'] = $user->createToken("auth-token")->plainTextToken;
+    return $this->success($user,"Login successful",200);
   }
   //----------
   
-  public function logout()
+  public function logout(Request $request)
   {
-    
+    $request->user()->currentAccessToken()->delete();
+    return $this->success([],"Logout Successful",200);
   }
   //----------
   
